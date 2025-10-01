@@ -7,11 +7,31 @@ consider implementing more robust and specialized tools tailored to your needs.
 """
 
 from typing import Any, Callable, List, Optional, cast
+from typing_extensions import Annotated
+
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import InjectedToolArg
 
 from langchain_tavily import TavilySearch  # type: ignore[import-not-found]
 from langgraph.runtime import get_runtime
 
 from react_agent.context import Context
+
+from react_agent.langchain_doc_retriever import retriever
+
+
+def search_langchain_langgraph(
+    query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
+) -> Optional[list[dict[str, Any]]]:
+    """Search in LangChain and LangGraph official documentation.
+    This tool should be used in priority over a generic web search. 
+    It is is designed to provide comprehensive, accurate, and trusted results. It's particularly useful
+    for answering questions about LangChain, LangGraph and LangSmith
+    """
+    result = retriever.invoke(query)
+    return cast(list[dict[str, Any]], result)
+
+
 
 
 async def search(query: str) -> Optional[dict[str, Any]]:
@@ -26,4 +46,4 @@ async def search(query: str) -> Optional[dict[str, Any]]:
     return cast(dict[str, Any], await wrapped.ainvoke({"query": query}))
 
 
-TOOLS: List[Callable[..., Any]] = [search]
+TOOLS: List[Callable[..., Any]] = [search, search_langchain_langgraph]
